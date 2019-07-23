@@ -107,6 +107,7 @@ public class Registration extends AppCompatActivity {
         } else if (repwd.length() == 0) {
             FancyToast.makeText(this, "Please re-enter your password for confirmation ", FancyToast.LENGTH_LONG, FancyToast.ERROR, true).show();
             isRePwdMach = false;
+
         }
     }
 
