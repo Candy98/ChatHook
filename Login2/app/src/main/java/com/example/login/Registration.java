@@ -1,6 +1,10 @@
 package com.example.login;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Patterns;
@@ -10,19 +14,25 @@ import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.parse.ParseException;
+import com.parse.ParseUser;
+import com.parse.SignUpCallback;
 import com.shashank.sony.fancytoastlib.FancyToast;
 
 public class Registration extends AppCompatActivity {
-    View vLog;
+    View vLog, myView;
     EditText etFullName, etEmail, etPwd, etRePwd, etPhNo;
     Button regBtn;
     boolean isUname = false, isEmail = false, isPhnNo = false, isPwd = false, isRePwdMach = false;
+    MainActivity sucSnack;
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_registration);
         viewBinder();
+        objInitializer();
         vLog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -38,9 +48,56 @@ public class Registration extends AppCompatActivity {
                 phoneNoValidator(etPhNo.getText().toString());
                 passwordValidator(etPwd.getText().toString());
                 reEnterPwdValidator(etRePwd.getText().toString());
+                if (isUname && isEmail && isPhnNo && isPwd && isRePwdMach) {
+                    parseConnect();
+                }
             }
         });
+        isParseUserSignedUpChecker();
+
     }
+
+    private void isParseUserSignedUpChecker() {
+        if (ParseUser.getCurrentUser() != null) {
+            ParseUser.getCurrentUser().logOut();
+        }
+    }
+
+    private void objInitializer() {
+        sucSnack = new MainActivity();
+        progressDialog = new ProgressDialog(this);
+    }
+
+    private void parseConnect() {
+        if (isOnline()) {
+
+            ParseUser appUser = new ParseUser();
+            appUser.setUsername(etFullName.getText().toString());
+            appUser.setPassword(etPwd.getText().toString());
+            appUser.setEmail(etEmail.getText().toString());
+            appUser.put("Phone", etPhNo.getText().toString());
+            progressDialog.setMessage("Registering " + etFullName.getText());
+
+            progressDialog.show();
+            appUser.signUpInBackground(new SignUpCallback() {
+                @Override
+                public void done(ParseException e) {
+                    if (e == null) {
+                        sucSnack.successSnackBuilder("Registration sucessful", myView);
+
+                    } else {
+                        sucSnack.errorSnackBuilder(e.getMessage(), myView);
+                    }
+                    progressDialog.dismiss();
+                }
+            });
+
+        } else {
+            sucSnack.errorSnackBuilder("Please check your internet connection and try again", myView);
+        }
+
+    }
+
 
     public void reEnterPwdValidator(String repwd) {
         String prvpwd = null;
@@ -105,7 +162,12 @@ public class Registration extends AppCompatActivity {
 
 
     public void nameValidator(String name) {
-
+        if (name.length() == 0) {
+            FancyToast.makeText(this, "Please enter Username", FancyToast.LENGTH_LONG, FancyToast.ERROR, true).show();
+            isUname = false;
+        } else {
+            isUname = true;
+        }
 
     }
 
@@ -117,8 +179,15 @@ public class Registration extends AppCompatActivity {
         etRePwd = findViewById(R.id.etRePwd);
         etPhNo = findViewById(R.id.etPhno);
         regBtn = findViewById(R.id.regBtn);
-
+        myView = findViewById(R.id.regLayout);
 
     }
+
+    protected boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
 
 }
