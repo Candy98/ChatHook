@@ -181,6 +181,8 @@ public class Registration extends AppCompatActivity {
         regBtn = findViewById(R.id.regBtn);
         myView = findViewById(R.id.regLayout);
 
+
+
     }
 
     protected boolean isOnline() {
